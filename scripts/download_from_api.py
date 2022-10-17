@@ -1,10 +1,12 @@
+import os
 import requests
 import json
 import time
 from tqdm import tqdm
 
-# url = 'https://api.opendota.com/api/parsedMatches?id=6809572336'
-# url = 'https://api.opendota.com/api/findMatches?id=6809753734'
+
+public_matches_path = 'data/public_matches.json'
+matches_details_path = 'data/matches_details.json'
 
 
 def load_json(url):
@@ -16,7 +18,7 @@ def download_public_matches(last_match_id=6808764903, n=1_000):
     matches_data = []
 
     def save():
-        with open('data/public_matches.json', 'w') as f:
+        with open(public_matches_path, 'w') as f:
             json.dump(matches_data, f)
 
     for i in (pbar := tqdm(range(n))):
@@ -32,7 +34,8 @@ def download_public_matches(last_match_id=6808764903, n=1_000):
             public_matches = list(set(matches_id) | set(public_matches))
             last_match_id = min(matches_id)  # to download only unique matches
         except Exception as ex:
-            print(ex.message)
+            print('Exception is handled:')
+            print(ex)
             last_match_id -= 100
         
         if i % 50 == 0:
@@ -45,25 +48,44 @@ def download_public_matches(last_match_id=6808764903, n=1_000):
 def download_matches_details():
     matches_details = []
 
-    with open('data/public_matches.json') as f:
+    with open(public_matches_path) as f:
         public_matches = json.load(f)
-    matches_id = list(set([m['match_id'] for m in public_matches]))
+    matches_id = set([m['match_id'] for m in public_matches])
+    print(f'{len(matches_id)} matches in {public_matches_path}')
+
+    if os.path.exists(matches_details_path):
+        with open(matches_details_path) as f:
+            matches_details = json.load(f)
+        already_downloaded_matches = set([m.get('match_id') \
+            for m in matches_details])
+        print(f'{len(already_downloaded_matches)} matches already '
+              f'downloaded (in {matches_details_path})')
+        matches_id = matches_id - already_downloaded_matches
+    matches_id = list(matches_id)
 
     def save():
-        with open('data/matches_details.json', 'w') as f:
+        with open(matches_details_path, 'w') as f:
             json.dump(matches_details, f)
 
     print(f'Downloading {len(matches_id)} matches details')
-    for i, m_id in (pbar := tqdm(enumerate(matches_id),
-                    total=len(matches_id))):
+    for i, m_id in tqdm(enumerate(matches_id),
+                        total=len(matches_id)):
+        time.sleep(0.5)
         url = f'https://api.opendota.com/api/matches/{m_id}'
+
         try:
             json_responce = load_json(url)
+            if 'error' in json_responce:
+                print('Error:')
+                print(json_responce)
+                time.sleep(1)
+                continue
             matches_details.append(json_responce)
             if i % 100 == 0:
                 save()
         except Exception as ex:
-            print(ex.message)
+            print('Exception is handled:')
+            print(ex)
 
     print('All matches details downloaded')
     save()
