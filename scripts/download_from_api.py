@@ -4,9 +4,12 @@ import json
 import time
 from tqdm import tqdm
 
-
 public_matches_path = 'data/public_matches.json'
 matches_details_path = 'data/matches_details.json'
+
+api_key = os.getenv('OPENDOTA_KEY')
+if api_key is not None:
+    print('Using api key!')
 
 
 def load_json(url):
@@ -70,8 +73,11 @@ def download_matches_details():
     print(f'Downloading {len(matches_id)} matches details')
     for i, m_id in tqdm(enumerate(matches_id),
                         total=len(matches_id)):
-        time.sleep(0.5)
         url = f'https://api.opendota.com/api/matches/{m_id}'
+        if api_key is not None:
+            url += f'?api_key={api_key}'
+        else:
+            time.sleep(0.5)  # free api limit
 
         try:
             json_responce = load_json(url)
@@ -81,7 +87,7 @@ def download_matches_details():
                 time.sleep(1)
                 continue
             matches_details.append(json_responce)
-            if i % 100 == 0:
+            if i % 200 == 0:
                 save()
         except Exception as ex:
             print('Exception is handled:')
