@@ -7,8 +7,8 @@ import multiprocessing
 from functools import partial
 from multiprocessing.pool import ThreadPool
 
-public_matches_path = 'data/public_matches.json'
-matches_details_path = 'data/matches_details.json'
+public_matches_path = 'data/public_matches_p2.json'
+matches_details_path = 'data/matches_details_p2.json'
 
 api_key = os.getenv('OPENDOTA_KEY')
 if api_key is not None:
@@ -35,17 +35,18 @@ def download_one_match(api_key, save, i_and_m_id):
     url = f'https://api.opendota.com/api/matches/{m_id}'
     if api_key is not None:
         url += f'?api_key={api_key}'
+        time.sleep(0.05)
     else:
         time.sleep(0.5)  # free api limit
 
     try:
-        json_responce = load_json(url)
-        if 'error' in json_responce:
+        json_response = load_json(url)
+        if 'error' in json_response:
             print('Error:')
-            print(json_responce)
-            time.sleep(0.1)
+            print(json_response)
+            time.sleep(1.0)
             return
-        matches_details.append(json_responce)
+        matches_details.append(json_response)
         if (i + 1) % 1_000 == 0:
             lock.acquire()
             save(matches_details)
@@ -63,16 +64,24 @@ def download_public_matches(last_match_id=6808764903, n=1_000):
         pbar.set_description(f'Public_matches: {len(public_matches)}')
         
         url = f'https://api.opendota.com/api/publicMatches?less_than_match_id={last_match_id}'
-        if api_key is not None:
+        if api_key is not None and False:
+            # TEMP:
+            # There is a bug in API for "publicMatches" with api_key request
             url += f'?api_key={api_key}'
+            time.sleep(0.1)
         else:
-            time.sleep(0.5)  # free api limit
+            time.sleep(0.8)  # free api limit
 
         try:
             json_response = load_json(url)
+            if 'error' in json_response:
+                print('Error:')
+                print(json_response)
+                time.sleep(0.5)
             matches_data.extend(json_response)
 
             matches_id = [i['match_id'] for i in json_response]
+            # sanity check for matches uniqueness, see tqdm while running
             public_matches = list(set(matches_id) | set(public_matches))
             last_match_id = min(matches_id)  # to download only unique matches
         except Exception as ex:
@@ -80,7 +89,7 @@ def download_public_matches(last_match_id=6808764903, n=1_000):
             print(ex)
             last_match_id -= 100
         
-        if i % 50 == 0:
+        if i % 100 == 0:
             save(matches_data)
         
     print(f'{len(set(public_matches))} unique matches downloaded')
