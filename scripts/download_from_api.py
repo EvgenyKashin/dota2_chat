@@ -16,10 +16,12 @@ if api_key is not None:
 
 
 def load_json(url):
+    # TODO: increase retry time between requests, decrease max retries
     response = requests.get(url)
     return json.loads(response.text)
 
 def save_to_json(path, data):
+    # TODO: is it possible to "append" to json file?
     with open(path, 'w') as f:
         json.dump(data, f)
 
@@ -35,7 +37,7 @@ def download_one_match(api_key, save, i_and_m_id):
     url = f'https://api.opendota.com/api/matches/{m_id}'
     if api_key is not None:
         url += f'?api_key={api_key}'
-        time.sleep(0.05)
+        time.sleep(0.1)
     else:
         time.sleep(0.5)  # free api limit
 
@@ -47,7 +49,7 @@ def download_one_match(api_key, save, i_and_m_id):
             time.sleep(1.0)
             return
         matches_details.append(json_response)
-        if (i + 1) % 1_000 == 0:
+        if (i + 1) % 5_000 == 0:
             lock.acquire()
             save(matches_details)
             lock.release()
