@@ -8,5 +8,6 @@ To download data:
 - `python scripts/download_from_api.py`
 
 Notebooks:
-- `scripts/Data_collection_and_preprocessing.ipynb`
-- `scripts/Dataset_EDA.ipynb`
+- `scripts/Data_collection_and_preprocessing.ipynb` - the script's results post-processing;
+- `scripts/EDA.ipynb`;
+- `scripts/Dataset_and_Models.ipynb` - models training. 
