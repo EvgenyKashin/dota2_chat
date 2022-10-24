@@ -1,4 +1,5 @@
 # Winning Communication: Can the outcome of a Dota2 match be predicted from in-game chat?
+![Title](imgs/word_cloud.png)
 ## Data
 We use the [OpenDota API](https://www.opendota.com/api-keys) to download matches and in-game chat. 
 ## Usage
